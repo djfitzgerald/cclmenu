@@ -1,0 +1,127 @@
+;HOMEP
+.my
+.j %$&#&@!+
+.jx set norm col=tur highlight=none
+.jx set high col=white highlight=none
+.jx set ctlchar $ col=yel highlight=none type=high
+.jx set ctlchar # col=gre highlight=und  type=(unp skip)
+.jx Set Ctl @ col=gre typ=unp
+.F  HELP PARA QUIT CLRP % LAST % % % % % QUIT
+.h3
+==============================================================================
+              CLASSICAL COMPUTING LABORATORY AT IBM POUGHKEEPSIE
+==============================================================================
+.t
+.cs
+Choose from one of our available activites:
+ 
+    1) Create a Banner, Sign, or Calendar
+    2) Play a Game
+    3) View Cool Demos
+    4) Talk with our Advanced AI Chatbot
+ 
+    C) Exit to CMS
+    X) Logoff VM
+ 
+$Your-Selection-==> #1&choice
+ 
+.b
+.jx set high col=red highlight=none
+.ch
+ &msg
+;EDPANEL
+;GAMESP
+.my
+.j %$&#&@!+
+.jx set norm col=tur highlight=none
+.jx set high col=white highlight=none
+.jx set ctlchar $ col=yel highlight=none type=high
+.jx set ctlchar # col=gre highlight=und  type=(unp skip)
+.jx Set Ctl @ col=gre typ=unp
+.F  HELP PARA QUIT CLRP % LAST % % % % % QUIT
+.h3
+==============================================================================
+                               MAINFRAME ARCADE
+==============================================================================
+.t
+.cs
+Would you like to play a game?
+ 
+    1) Adventure        6) Kalah           11) Slash           16) Vocab
+    2) Backgammon       7) Lunar Lander    12) Snake           17) Wordle
+    3) Blackjack        8) Mastermind      13) Space Invaders  18) Zork
+    4) Checkers         9) Oregon Trail    14) Star Trek
+    5) Hunt the Wumpus 10) Qubic           15) Tic-Tac-Toe
+ 
+    X) Return to Main Menu
+ 
+$Your-Selection-==> #2&choice
+ 
+.b
+.jx set high col=red highlight=none
+.ch
+ &msg
+;EGPANEL
+;MISCP
+.my
+.j %$&#&@!+
+.jx set norm col=tur highlight=none
+.jx set high col=white highlight=none
+.jx set ctlchar $ col=yel highlight=none type=high
+.jx set ctlchar # col=gre highlight=und  type=(unp skip)
+.jx Set Ctl @ col=gre typ=unp
+.F  HELP PARA QUIT CLRP % LAST % % % % % QUIT
+.h3
+==============================================================================
+                              DEMOSCENE HIJINKS
+==============================================================================
+.t
+.cs
+Choose from one of our available demos:
+ 
+    1) Digital Clock
+    2) Terminal torture test (contains flashing lights)
+    3) Maze
+    4) Magic 8 Ball
+    5) Tank animation (contains flashing lights)
+    6) Windowing demo
+ 
+    X) Return to the Main Menu
+ 
+$Your-Selection-==> #1&choice
+ 
+.b
+.jx set high col=red highlight=none
+.ch
+ &msg
+;EMPANEL
+;PRINTP
+.my
+.j %$&#&@!+
+.jx set norm col=tur highlight=none
+.jx set high col=white highlight=none
+.jx set ctlchar $ col=yel highlight=none type=high
+.jx set ctlchar # col=gre highlight=und  type=(unp skip)
+.jx Set Ctl @ col=gre typ=unp
+.F  HELP PARA QUIT CLRP % LAST % % % % % QUIT
+.h3
+==============================================================================
+                    CLASSICAL COMPUTING LABORATORY SIGN SHOP
+==============================================================================
+.t
+.cs
+What would you like to make today?
+ 
+    1) A sign
+    2) A banner
+    3) A Peanuts wall calendar
+ 
+    X) Return to the Main Menu
+ 
+$Your-Selection-==> #1&choice
+ 
+.b
+.jx set high col=red highlight=none
+.ch
+ &msg
+;EPPANEL

@@ -1,0 +1,662 @@
+/*
+ * CCLGAMES
+ *    Frontend for selecting games on CCL VM systems
+ *
+ * Classification:
+ *      Public
+ *
+ * Author:
+ *      Okyere Boateng <okyerework@outlook.com>
+ *      Dan FitzGerald <danjfitzgerald@comcast.net>
+ *
+ * Revision History:
+ *    03/2026
+ *      - Initial creation, as VCFGAMES EXEC
+ *
+ *    10/2026
+ *      - Reimplemeted using IOS3270 and NEATWIND libraries
+ *      - Major application rewrite from the ground up
+ *
+ * Purpose:
+ *    Allows a neophyte CMS user to select from a list of curated games
+ *
+ * Usage:
+ *
+ *    >>- CCLGAMES ------------------------------------------------><
+ *
+ * Requirements:
+ *
+ *    Filename Filetype Purpose
+ *    -------- -------- --------------------------------------------- 
+ *    ADVENTUR PACKAGE  Collosal Cave Adventure game
+ *    BASIC360 MODULE   CALL/360 BASIC interpreter (required by QUBIC)
+ *    BKG      PACKAGE  Backgammon game
+ *    BLAKJACK PACKAGE  Blackjack game
+ *    CCLMENU  IOS3270  Panel definitions for DIOF-3
+ *    CHECKERS PACKAGE  Checkers game
+ *    EAGRTLIB MODULE   CMS REXX Compiler runtime libraries (optional)
+ *    GOPWIN   MODULE   GOPWIN / APPWIN Full screen 3270 screen manager
+ *                      (required by WORDLE)
+ *    INV      PACKAGE  Space Invaders game
+ *    IOS3270  MODULE   Display Input/Output Facility v.3 (DIOF-3)
+ *                      (IBM 3270 panel generation library)
+ *    KALAH    PACKAGE  Kalah game
+ *    LUNAR    PACKAGE  Lunar Lander game
+ *    MASTER   PACKAGE  Mastermind game
+ *    NEATWIND MODULE   3270 indowing library VM/CMS applications
+ *    OREGON   PACKAGE  Oregon Trail game
+ *    SLASH    PACKAGE  Slash game
+ *    SNAKE    PACKAGE  Snake game
+ *    STAR1    PACKAGE  Star Trek game
+ *    TICTOE   PACKAGE  Tic-Tac-Toe game
+ *    VOCAB    PACKAGE  Vocab game
+ *    WORDLE   PACKAGE  Wordle game
+ *    WUMPUS   PACKAGE  Hunt the Wumpus game
+ *    ZORK     PACKAGE  Zork game
+ *
+ *    Note that PACKAGE files list additional dependencies
+ *
+ * Exit Normal -
+ *      RC =  0 - Operation completed successfully
+ *
+ * Exit Error -
+ *      None.
+ */
+
+ADDRESS CMS
+TRACE OFF
+
+/* Global variables */
+alarm    = ''                              /* No alarm default         */
+msg      = ''                              /* Initiate error message   */
+cursor   = '00001'                         /* Set cursor position.     */
+neatwind = 'NEATWIND'               /* Command used to invoke NEATWIND */
+
+/* Load the compiled version of NEATWIND if we haven't done so already */
+'NUCXLOAD NEATWIND'
+IF rc <> 0 & rc <> 1 THEN   /* If not loaded and not already active */
+  DO
+    SAY 'Unable to NUCXLOAD NEATWIND, defaulting to interpreted version'
+    neatwind = 'EXEC' neatwind
+  END
+
+DO FOREVER
+  choice   = ''                            /* User's choice            */
+  in_error = 0                             /* Are we looping in error? */
+  game_started = 0                  /* Did we run a game and come back?*/
+
+  'IOS3270 CCLMENU  IOS3270 * ;GAMESP           (PA2 SUBSET '
+  IF RC <> 0 THEN EXIT RC
+
+  /* Process choice */
+  SELECT
+    WHEN choice = '1' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 13
+      about.1 = ''
+      about.2 = 'The classic text-based adventure game originally written'
+      about.3 = 'by Willie Crowther and Don Woods for the PDP-10.  In the'
+      about.4 = 'game, the player explores a cave system rumored to be'
+      about.5 = 'filled with treasure and gold. The game is composed of'
+      about.6 = 'dozens of locations, and the player moves between these'
+      about.7 = 'locations and interacts with objects in them by typing'
+      about.8 = 'one- or two-word commands which are interpreted by the'
+      about.9 = "game's natural language input system."
+      about.10 = ''
+      about.11 = 'To quit the game once its started, type QUIT'
+      about.12 = ''
+      about.13 = 'Do you wish to continue?'
+      about_rc = about_this_game('Collosal Cave Adventure')
+      IF about_rc == 1 THEN
+        DO
+          game_started = 1
+          'ADVENTUR'
+        END
+    END
+
+    WHEN choice = '2' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 15
+      about.1 = ''
+      about.2 = 'Backgammon is a two-player board game played with'
+      about.3 = 'counters and dice on tables boards. It is the most'
+      about.4 = 'widespread Western member of the large family of tables'
+      about.5 = 'games, whose ancestors date back at least 1,600 years.'
+      about.6 = 'The earliest record of backgammon itself dates to 17th-'
+      about.7 = 'century England, being descended from the 16th-century'
+      about.8 = 'game of "Irish".'
+      about.9 = ''
+      about.10 = 'The two players (0 and X) play alternately, moving'
+      about.11 = 'their pieces according to the throw of two dice.'
+      about.12 = ''
+      about.13 = 'To quit the game once its started, issue: #HX and then'
+      about.14 = 'issue: CCLMENU ( GAMES'
+      about.15 = ''
+      about.16 = 'Do you wish to continue?'
+      about_rc = about_this_game('Backgammon')
+      IF about_rc == 1 THEN
+        DO 
+          game_started = 1
+          'BKG'
+        END
+    END
+
+    WHEN choice = '3' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 14
+      about.1 = ''
+      about.2 = 'Blackjack is the most widely played casino banking game'
+      about.3 = 'in the world. It uses decks of 52 cards and descends'
+      about.4 = 'from a global family of casino banking games known as'
+      about.5 = '"twenty-one". This family of card games also includes'
+      about.6 = 'the European games vingt-et-un and pontoon, and the'
+      about.7 = 'Russian game Ochko. The game is a comparing card game'
+      about.8 = 'where players compete against the dealer, rather than'
+      about.9 = 'each other.'
+      about.10 = ''
+      about.11 = 'To quit the game once its started, press the PA1 key'
+      about.12 = 'and then issue: IPL CMS'
+      about.13 = ''
+      about.14 = 'Do you wish to continue?'
+      about_rc = about_this_game('Blackjack')
+      IF about_rc == 1 THEN 
+        DO 
+          game_started = 1
+          'BJ'
+        END
+    END
+
+    WHEN choice = '4' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 15
+      about.1 = ''
+      about.2 = 'Checkers, also known as "draughts", is a group of'
+      about.3 = 'strategy board games for two players which involve'
+      about.4 = 'forward movements of uniform game pieces and mandatory'
+      about.5 = 'captures by jumping over opponent pieces. Checkers is'
+      about.6 = 'developed from alquerque, a strategy board game thought'
+      about.7 = 'to have originated in the Middle East. The term'
+      about.8 = '"checkers" derives from the checkered board which the'
+      about.9 = 'game is played on, whereas "draughts" derives from the'
+      about.10 = 'verb "to draw" or "to move".'
+      about.11 = ''
+      about.12 = 'To quit the game once its started, issue: #HX and then'
+      about.13 = 'issue: CCLMENU ( GAMES'
+      about.14 = ''
+      about.15 = 'Do you wish to continue?'
+      about_rc = about_this_game('Checkers')
+      IF about_rc == 1 THEN
+        DO 
+          game_started = 1
+          'CHECKERS'
+        END
+    END
+
+    WHEN choice = '5' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 16
+      about.1 = ''
+      about.2 = 'A text-based adventure game developed by Gregory Yob in'
+      about.3 = '1973. In the game, the player moves through a series of'
+      about.4 = 'connected caves, arranged as the vertices of a'
+      about.5 = 'dodecahedron, as they hunt a monster named the Wumpus.'
+      about.6 = 'The turn-based game has the player trying to avoid fatal'
+      about.7 = 'bottomless pits and "super bats" that will move them'
+      about.8 = 'around the cave system; the goal is to fire one of their'
+      about.9 = '"crooked arrows" through the caves to kill the Wumpus.'
+      about.10 = ''
+      about.11 = 'Originally published in Creative Computing magazine.'
+      about.12 = ''
+      about.13 = 'To quit the game once its started, issue: #HX and then'
+      about.14 = 'issue: CCLMENU ( GAMES'
+      about.15 = ''
+      about.16 = 'Do you wish to continue?'
+      about_rc = about_this_game('Hunt the Wumpus')
+      IF about_rc == 1 THEN
+        DO 
+          game_started = 1
+          'WUMPUS'
+        END
+    END
+
+    WHEN choice = '6' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 15
+      about.1 = ''
+      about.2 = '"Kalah" is a board game played by two sentient life'
+      about.3 = 'forms, the object of which is to fill your Kalah with'
+      about.4 = 'as many pebbles as possible.'
+      about.5 = ''
+      about.6 = 'The board is made up of 14 pits, arranged in two rows'
+      about.7 = 'of six pits each with one pit at each end of the two'
+      about.8 = 'rows. The end pits are called Kalahs; the bottom row of'
+      about.9 = 'pits and right Kalah belong to the human player, and'
+      about.10 = 'the top row and left Kalah are used by the computer.'
+      about.11 = ''
+      about.12 = 'To quit the game once its started, issue: #HX and then'
+      about.13 = 'issue: CCLMENU ( GAMES'
+      about.14 = ''
+      about.15 = 'Do you wish to continue?'
+      about_rc = about_this_game('Kalah')
+      IF about_rc == 1 THEN 
+        DO 
+          game_started = 1
+          'KALAH'
+        END
+    END
+
+    WHEN choice = '7' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 15
+      about.1 = ''
+      about.2 = 'A text-based game where the player controls a'
+      about.3 = 'spacecraft as it falls toward the surface of the Moon'
+      about.4 = 'or other astronomical body, using thrusters to slow the'
+      about.5 = "ship's descent and control its horizontal motion to"
+      about.6 = 'reach a safe landing area. Crashing into obstacles,'
+      about.7 = 'hitting the surface at too high a velocity, or running'
+      about.8 = 'out of fuel all result in failure.'
+      about.9 = ''
+      about.10 = 'Originally published in "Basic Computer Games" (1978).'
+      about.11 = ''
+      about.12 = 'To quit the game once its started, issue: #HX and then'
+      about.13 = 'issue: CCLMENU ( GAMES'
+      about.14 = ''
+      about.15 = 'Do you wish to continue?'
+      about_rc = about_this_game('Lunar Lander')
+      IF about_rc == 1 THEN 
+        DO 
+          game_started = 1
+          'LUNAR'
+        END
+    END
+
+    WHEN choice = '8' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 10
+      about.1 = ''
+      about.2 = 'A code-breaking game for two players invented in 1970'
+      about.3 = 'by Mordecai Meirowitz, an Israeli postmaster and'
+      about.4 = 'telecommunications expert. The version on this system'
+      about.5 = 'is a single player against the computer.'
+      about.6 = ''
+      about.7 = 'To quit the game once its started, issue: #HX and then'
+      about.8 = 'issue: CCLMENU ( GAMES'
+      about.9 = ''
+      about.10 = 'Do you wish to continue?'
+      about_rc = about_this_game('Mastermind')
+      IF about_rc == 1 THEN 
+        DO 
+          game_started = 1
+          'EXEC MASTER'
+        END
+      
+      /* Code to chose between 1 and 2 player variants:
+      'MAKEBUF'
+      QUEUE 'Number of players (1 or 2):@'
+      neatwind '(SAA90 MENU=12 VANISH'
+      $rc = rc
+      'DROPBUF'
+      IF $rc == 1 THEN
+        DO
+          game_started = 1
+          'EXEC MASTER'
+        END
+      ELSE IF $rc == 2 THEN
+        DO
+          game_started = 1
+          'EXEC MSTRMIND'
+        END
+      ELSE ITERATE
+    */
+    END
+
+    WHEN choice = '9' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 14
+      about.1 = ''
+      about.2 = 'The classic game to simulate travel on the 1847 Oregon'
+      about.3 = 'Trail!  Originally developed by by Carleton College'
+      about.4 = 'students Don Rawitsch, Bill Heinemann, and Paul'
+      about.5 = 'Dillenberger in 1971 and produced by the Minnesota'
+      about.6 = 'Educational Computing Consortium (MECC) beginning in'
+      about.7 = '1975.  This version is an updated version originally'
+      about.8 = 'published in the July-August 1978 issue of Creative'
+      about.9 = 'Computing magazine.'
+      about.10 = ''
+      about.11 = 'To quit the game once its started, issue: #HX and then'
+      about.12 = 'issue: CCLMENU ( GAMES'
+      about.13 = ''
+      about.14 = 'Do you wish to continue?'
+      about_rc = about_this_game('Oregon Trail')
+      IF about_rc == 1 THEN
+        DO 
+          game_started = 1
+          'OREGON'
+        END
+    END
+
+    WHEN choice = '10' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 15
+      about.1 = ''
+      about.2 = 'A variation of three dimensional tic-tac-toe. The game'
+      about.3 = 'is played in a four by four by four cube. Moves are'
+      about.4 = 'stated by giving a three digit location, each digit of'
+      about.5 = 'which can run from 1 to 4 inclusive. The first digit'
+      about.6 = 'indicates the level of the cube, the second digit'
+      about.7 = 'indicates the row on that level, and the third digit'
+      about.8 = 'indicated the column on that level.'
+      about.9 = ''
+      about.10 = 'This version adapted to VS/BASIC by Joe Anello.'
+      about.11 = ''
+      about.12 = 'To quit the game once its started, issue: #HX and then'
+      about.13 = 'issue: CCLMENU ( GAMES'
+      about.14 = ''
+      about.15 = 'Do you wish to continue?'
+      about_rc = about_this_game('Qubic')
+      IF about_rc == 1 THEN
+        DO 
+          game_started = 1
+          'QUBIC'
+        END
+    END
+
+    WHEN choice = '11' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 15
+      about.1 = ''
+      about.2 = 'A realtime video game for 3270 terminals. The game board'
+      about.3 = 'is a visual representation of an area of space in which'
+      about.4 = 'bombs (represented by "#" characters) are scattered'
+      about.5 = 'randomly at the start and remain stationary for the'
+      about.6 = 'duration of the game or until they are destroyed,'
+      about.7 = 'whichever comes first.  Your job is to destroy all of'
+      about.8 = 'the bombs!'
+      about.9 = ''
+      about.10 = 'Program written by Yossie Silverman, Weizmann Institute'
+      about.11 = 'Computing Center (Israel).'
+      about.12 = ''
+      about.13 = 'To quit the game once its started, press ENTER.'
+      about.14 = ''
+      about.15 = 'Do you wish to continue?'
+      about_rc = about_this_game('Slash')
+      IF about_rc == 1 THEN
+        DO 
+          game_started = 1
+          'SLASH'
+        END
+    END
+
+    WHEN choice = '12' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 17
+      about.1 = ''
+      about.2 = 'A realtime video game for 3270 terminals. The game board'
+      about.3 = 'is covered with numbers in a range which depends on  the'
+      about.4 = 'size of the board, usually in the range  1..n, where n'
+      about.5 = 'is from 5..9, smallest screen to largest screen. The'
+      about.6 = "object of the game is to 'eat' as many cells on the"
+      about.7 = 'board as possible, thus enlarging the snake represented'
+      about.8 = "by a trail of '.' without overstepping the '.'s and with"
+      about.9 = 'as few bumps into the side as possible.'
+      about.10 = ''
+      about.11 = 'Program written by Yossie Silverman, Weizmann Institute'
+      about.12 = 'Computing Center (Israel).'
+      about.13 = ''
+      about.14 = 'To quit the game once its started, press the PA1 key'
+      about.15 = 'and then strike any key.'
+      about.16 = ''
+      about.17 = 'Do you wish to continue?'
+      about_rc = about_this_game('Snake')
+      IF about_rc == 1 THEN 
+        DO 
+          game_started = 1
+          'SNAKE'
+        END
+    END
+
+    WHEN choice = '13' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 12
+      about.1 = ''
+      about.2 = 'A 1978 fixed shooter video game developed and published'
+      about.3 = 'by Taito.  This PL/I version was written in August 1979'
+      about.4 = 'by Mike Cowlishaw, a future IBM Fellow and creator of'
+      about.5 = 'the Rexx family of programming languages.'
+      about.6 = ''
+      about.7 = 'This is one of the most visually impressive games you'
+      about.8 = 'will ever see in a 3270 terminal.'
+      about.9 = ''
+      about.10 = 'To quit the game once its started, press the PF5 key'
+      about.11 = ''
+      about.12 = 'Do you wish to continue?'
+      about_rc = about_this_game('Space Invaders')
+      IF about_rc == 1 THEN
+        DO 
+          game_started = 1
+          'INV2'
+        END
+    END
+
+    WHEN choice = '14' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 14
+      about.1 = ''
+      about.2 = 'A text-based strategy video game based on the Star Trek'
+      about.3 = 'television series (1966-1969) and originally released in'
+      about.4 = '1971. In the game, the player commands the USS'
+      about.5 = 'Enterprise on a mission to hunt down and destroy an'
+      about.6 = 'invading fleet of Klingon warships. The player travels'
+      about.7 = 'through the 64 quadrants of the galaxy to attack enemy'
+      about.8 = 'ships with phasers and photon torpedoes in turn-based'
+      about.9 = 'battles and refuel at starbases. The goal is to'
+      about.10 = 'eliminate all enemies within a random time limit.'
+      about.11 = ''
+      about.12 = 'To quit the game once its started, type QUIT'
+      about.13 = ''
+      about.14 = 'Do you wish to continue?'
+      about_rc = about_this_game('Star Trek')
+      IF about_rc == 1 THEN 
+        DO 
+          game_started = 1
+          'STAR1'
+        END
+    END
+
+    WHEN choice = '15' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 15
+      about.1 = ''
+      about.2 = 'Also known as "noughts and crosses" or "Xs and Os", this'
+      about.3 = 'is a paper-and-pencil game for two players who take'
+      about.4 = 'turns marking the spaces in a three-by-three grid, one'
+      about.5 = 'with Xs and the other with Os. A player wins when they'
+      about.6 = 'mark all three spaces of a row, column, or diagonal of'
+      about.7 = 'the grid, whereupon they traditionally draw a line'
+      about.8 = 'through those three marks to indicate the win.'
+      about.9 = ''
+      about.10 = 'This version is single player vs. the computer.'
+      about.11 = ''
+      about.12 = 'To quit the game once its started, issue: #HX and then'
+      about.13 = 'issue: CCLMENU ( GAMES'
+      about.14 = ''
+      about.15 = 'Do you wish to continue?'
+      about_rc = about_this_game('Tic-Tac-Toe')
+      IF about_rc == 1 THEN
+        DO 
+          game_started = 1
+          'TICTOE'
+        END
+    END
+
+    WHEN choice = '16' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 8
+      about.1 = ''
+      about.2 = 'A vocabulary puzzle game, where the computer'
+      about.3 = 'describes something to you and you need say what it is.'
+      about.4 = ''
+      about.5 = 'To quit the game once its started, issue: #HX and then'
+      about.6 = 'issue: CCLMENU ( GAMES'
+      about.7 = ''
+      about.8 = 'Do you wish to continue?'
+      about_rc = about_this_game('Vocab')
+      IF about_rc == 1 THEN 
+        DO
+          game_started = 1
+          'VOCAB'
+        END
+    END
+
+    WHEN choice = '17' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 14
+      about.1 = ''
+      about.2 = 'A word game originally created and developed by Welsh'
+      about.3 = 'software engineer Josh Wardle.  In the game, players'
+      about.4 = 'have six attempts to guess a five-letter word, receiving'
+      about.5 = 'feedback through colored tiles that indicate correct'
+      about.6 = 'letters and their placement.  It was inspired by the'
+      about.7 = 'game Mastermind.'
+      about.8 = ''
+      about.9 = 'Our version was written in September 2025 by retired'
+      about.10 = 'IBM Researcher Ray Mansell.'
+      about.11 = ''
+      about.12 = 'To quit the game once its started, press the PF3 key'
+      about.13 = ''
+      about.14 = 'Do you wish to continue?'
+      about_rc = about_this_game('Wordle')
+      IF about_rc == 1 THEN
+        DO 
+          game_started = 1
+          'WORDLE'
+        END
+    END
+
+    WHEN choice = '18' THEN DO
+      CALL clear_diof_error_condition
+      about.0 = 17
+      about.1 = ''
+      about.2 = '"A game of adventure, danger, and low cunning.  In it'
+      about.3 = 'you will explore some of the most amazing territory ever'
+      about.4 = 'seen by mortal man.  Hardened adventurers have run'
+      about.5 = 'screaming from the terrors contained within."'
+      about.6 = ''
+      about.7 = 'Originally released as "Dungeon", this text adventure is'
+      about.8 = 'similar to Collosal Cave Adventure but with a vastly'
+      about.9 = 'improved natural language processor.  Extremely popular'
+      about.10 = 'on early home computer systems, Zork has been described'
+      about.11 = 'as the most famous piece of interactive fiction.'
+      about.12 = ''
+      about.13 = 'No IBM System should be without one!'
+      about.14 = ''
+      about.15 = 'To quit the game once its started, type QUIT'
+      about.16 = ''
+      about.17 = 'Do you wish to continue?'
+      about_rc = about_this_game('Zork')
+      IF about_rc == 1 THEN
+        DO
+          game_started = 1
+          'ZORK'
+        END
+    END
+
+    WHEN choice = 'X' | choice = 'x' THEN DO
+      LEAVE
+    END
+
+    OTHERWISE DO
+      Call emsg 'Invalid choice. Please enter a valid number, or X.'
+    END
+  END
+
+  IF in_error <> 1 & game_started == 1 THEN
+
+    DO
+      SAY ''
+      SAY 'Returning to the games menu...'
+      SAY 'Press ENTER when ready.'
+      PULL .
+    END
+
+END
+
+EXIT 0
+
+/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------*/
+/*                                                                    */
+/* End of main line of execution; subroutines follow                  */
+/*                                                                    */
+/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------*/
+
+about_this_game: PROCEDURE EXPOSE neatwind about.
+  title = ARG(1)
+  'MAKEBUF'
+  neatwind '(SAA90',
+            'QUERY',
+            'VANISH',
+            'SHOWSTEM about.',
+            'TITLE (' || title || ')'
+  $rc = rc
+  'DROPBUF'
+  RETURN $rc
+
+/*--------------------------------------------------------------------*/
+
+/*
+ * Subroutine: clear_diof_error_condition
+ *
+ * Purpose:
+ *    Clear an active DIOF-3 (IOS3270) error condition
+ *
+ * Usage:
+ *    Called as: CALL clear_diof_error_condition
+ *
+ * Global variables modified:
+ *    msg
+ *      Error message text (used by IOS3270 panel definiton)
+ *    alarm
+ *      Boolean: is an alarm active? (used by IOS3270 panel library)
+ *    in_error
+ *      Boolean: is an error condition active?
+ */
+clear_diof_error_condition: PROCEDURE EXPOSE msg alarm in_error
+   msg =
+   alarm =
+   in_error = 0
+   RETURN
+
+/*--------------------------------------------------------------------*/
+
+/*
+ * Subroutine: emsg
+ *
+ * Purpose:
+ *    Display an error message on the IOS3270 panel
+ *
+ * Usage:
+ *    Called as: CALL emsg message
+ *
+ *    Where:
+ *      message   - The error message text to display
+ *
+ * Global variables modified:
+ *    msg
+ *      Error message text (used by IOS3270 panel definiton)
+ *    alarm
+ *      Boolean: is an alarm active? (used by IOS3270 panel library)
+ *    in_error
+ *      Boolean: is an error condition active?
+ */
+emsg: PROCEDURE EXPOSE msg alarm in_error
+   msg = ARG(1)
+   alarm = 'ALARM'
+   in_error = 1
+   RETURN
+
+/*--------------------------------------------------------------------*/
+/* End of file                                                        */
+/*--------------------------------------------------------------------*/

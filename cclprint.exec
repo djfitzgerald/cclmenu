@@ -1,0 +1,818 @@
+/*
+ * CCLPRINT
+ *    Frontend for various user-developed banner and sign printing
+ *    programs on CMS
+ *
+ * Classification:
+ *      Public
+ *
+ * Author:
+ *      Okyere Boateng <okyerework@outlook.com>
+ *      Dan FitzGerald <danjfitzgerald@comcast.net>
+ *
+ * Revision History:
+ *    03/2026
+ *      - Initial creation, as VCFPRINT EXEC
+ *
+ *    10/2026
+ *      - Reimplemeted using IOS3270 and NEATWIND libraries
+ *      - Major application rewrite from the ground up
+ *
+ * Purpose:
+ *    Allows users to print signs and banners on a line printer
+ *
+ * Usage:
+ *
+ *    >>- CCLPRINT ------------------------------------------------><
+ *
+ * Requirements:
+ *
+ *    Filename Filetype Purpose
+ *    -------- -------- --------------------------------------------- 
+ *    CALLER   PACKAGE  Required by BIGTEXT
+ *    CCLMENU  IOS3270  Panel definitions for DIOF-3
+ *    CURSIVE  MODULE   Cursive font banner printer
+ *    BIGTEXT  PACKAGE  Generated big text for signs
+ *    EAGRTLIB MODULE   CMS REXX Compiler runtime libraries (optional)
+ *    GOTHIC   MODULE   Gothic (Old English) font banner printer
+ *    IOS3270  MODULE   Display Input/Output Facility v.3 (DIOF-3)
+ *                      (IBM 3270 panel generation library)
+ *    NEATWIND MODULE   3270 indowing library VM/CMS applications
+ *    VMPOPUSH PACKAGE  Required by BIGTEXT
+ *
+ *    Note that PACKAGE files list additional dependencies
+ *
+ * Exit Normal -
+ *      RC =  0 - Operation completed successfully
+ *
+ * Exit Error -
+ *      None.
+ */
+
+ADDRESS CMS
+TRACE OFF
+
+/* Program constants */
+PROGRAM.CALL_TYPE = ''      /* How the program was called */
+PROGRAM.FN = ''             /* Filename of this source file */
+PROGRAM.FT = ''             /* Filetype of this source file */
+PROGRAM.FM = ''             /* CMS filemode where this file is stored */
+PROGRAM.NAME_CALLED = ''    /* Name by which the program was called */
+PROGRAM.ADDRESS = ''        /* Initial (default) address for commands */
+SYSOP = 'MAINT'             /* VM ID to send deferred print jobs */
+
+/* Global variables */
+contact.firstName = ""
+contact.lastName = ""
+contact.phone = ""
+neatwind = 'NEATWIND'       /* Command used to invoke NEATWIND */
+
+/* We don't use most of these but get them for RAS purposes */
+PARSE SOURCE . PROGRAM.CALL_TYPE,
+               PROGRAM.FN,
+               PROGRAM.FT,
+               PROGRAM.FM,
+               PROGRAM.NAME_CALLED,
+               PROGRAM.ADDRESS
+
+/* Load the compiled version of NEATWIND if we haven't done so already */
+'NUCXLOAD NEATWIND'
+IF rc <> 0 & rc <> 1 THEN   /* If not loaded and not already active */
+  DO
+    SAY 'Unable to NUCXLOAD NEATWIND, defaulting to interpreted version'
+    neatwind = 'EXEC' neatwind
+  END
+
+/* Loop over possible IOS3270 panel choices */
+DO FOREVER
+  choice = ''                              /* User's choice            */
+  in_error = 0                             /* Are we looping in error? */
+
+  /* Invoke DIOF-3 using the panel definitions */
+  'IOS3270 CCLMENU  IOS3270 * ;PRINTP          (PA2 SUBSET '
+  IF rc <> 0 THEN EXIT rc
+
+  /* Get application choice */
+  SELECT
+    /* Choice 1: User wants to create a sign */
+    WHEN choice = '1' THEN DO
+      CALL clear_diof_error_condition
+      IF makeSign() == 0 THEN print(CCLSIGN, LISTING, A, "sign")
+      ITERATE
+    END
+
+    /* Choice 2: User wants to create a banner */
+    WHEN choice = '2' THEN DO
+      CALL clear_diof_error_condition
+      IF makeBanner() == 0 THEN print(CCLBANNR, LISTING, A, "banner")
+      ITERATE
+    END
+
+    /* Choice 3: User wants to print a Snoopy calendar*/
+    WHEN choice = '3' THEN DO
+      CALL clear_diof_error_condition
+      'VMFCLEAR'
+      'EXEC SNPCAL'
+      print(SNPCAL, LISTING, A, "calendar")
+      ITERATE
+    END
+
+    /* Choice 4: User wants to go back to the main menu */
+    WHEN choice = 'X' | choice = 'x' THEN DO
+      EXIT 0
+    END
+
+    /* User entered an invalid choice */
+    OTHERWISE DO
+      CALL emsg 'Invalid choice. Please enter a valid number, or X.'
+      ITERATE
+    END
+  
+  /* Display an error message if need be */
+  IF in_error <> 1 THEN
+    DO
+      SAY ''
+      SAY 'Press ENTER to return to misc applications menu...'
+      PULL .
+    END
+END
+
+EXIT 0
+
+/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------*/
+/*                                                                    */
+/* End of main line of execution; subroutines follow                  */
+/*                                                                    */
+/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------*/
+
+/*
+ * Function: confirmationDialog
+ *
+ * Purpose:
+ *    Display a pop-up confirmation dialog
+ *
+ * Usage:
+ *    Called as confirmationDialog(what)
+ *
+ *    Where:
+ *      what      - What is being printed (optional; displayed in
+ *                  confirmation dialog)
+ *
+ * Returns:
+ *    RC =  Return code from NEATWIND
+ */
+confirmationDialog: PROCEDURE EXPOSE neatwind
+what = ARG(1)
+IF what == '' THEN what = 'job'
+
+QUEUE '&ASK.You hit ENTER; are you ready to submit your' what ||'?'
+neatwind '( SAA90 QUERY LOCK VANISH'
+$rc = rc
+'DROPBUF'
+
+RETURN $rc
+
+/*--------------------------------------------------------------------*/
+
+/*
+ * Subroutine: clear_diof_error_condition
+ *
+ * Purpose:
+ *    Clear an active DIOF-3 (IOS3270) error condition
+ *
+ * Usage:
+ *    Called as: CALL clear_diof_error_condition
+ *
+ * Returns:
+ *    RC =  0
+ *
+ * Global variables modified
+ *    msg
+ *      Error message text (used by IOS3270 panel definiton)
+ *    alarm
+ *      Boolean: is an alarm active? (used by IOS3270 panel library)
+ *    in_error
+ *      Boolean: is an error condition active?
+ */
+clear_diof_error_condition: PROCEDURE EXPOSE msg alarm in_error
+   msg =
+   alarm =
+   in_error = 0
+   RETURN
+
+/*--------------------------------------------------------------------*/
+
+/*
+ * Subroutine: emsg
+ *
+ * Purpose:
+ *    Display an error message on the IOS3270 panel
+ *
+ * Usage:
+ *    Called as: CALL emsg message
+ *
+ *    Where:
+ *      message   - The error message text to display
+ *
+ * Returns:
+ *    RC =  0
+ *
+ * Global variables modified
+ *    msg
+ *      Error message text (used by IOS3270 panel definiton)
+ *    alarm
+ *      Boolean: is an alarm active? (used by IOS3270 panel library)
+ *    in_error
+ *      Boolean: is an error condition active?
+ */
+emsg: PROCEDURE EXPOSE msg alarm in_error
+   msg = ARG(1)
+   alarm = 'ALARM'
+   in_error = 1
+   RETURN
+
+/*--------------------------------------------------------------------*/
+
+/*
+ * Function: fatalErrorPopup
+ *
+ * Purpose:
+ *    Display an fatal error pop-up
+ *
+ * Usage:
+ *    Called as fatalErrorPopup(message)
+ *
+ *    Where:
+ *      message   - The error message text to display (Optional)
+ *
+ * Returns:
+ *    RC =  0
+ */
+fatalErrorPopup: PROCEDURE EXPOSE neatwind
+  message = ARG(1)
+
+  'MAKEBUF'
+  QUEUE '&ERROR1.An unexpected error has occurred.'
+  QUEUE '&ERROR2.Please contact your system operator.'
+  IF message <> '' THEN
+    DO
+      QUEUE ''
+      QUEUE '&ERRORF.'||message
+    END
+  QUEUE ''
+  QUEUE '&ERRORF.Press ENTER to continue.'
+  neatwind '( SAA90 MESSAGE'
+  'DROPBUF'
+  RETURN 0
+
+/*--------------------------------------------------------------------*/
+
+/*
+ * Subroutine: getContactInfo
+ *
+ * Purpose:
+ *    Get contact information for whomever is printing this job
+ *
+ * Usage:
+ *    Called as getContactInfo()
+ *
+ * Returns:
+ *    RC =  0 - Information collected
+ *       >  0 - An error code was surfaced from NEATWIND
+ *
+ * Global variables modified
+ *    firstName
+ *      Given name of job owner
+ *    lastName
+ *      Surname of job owner
+ *    phone
+ *      Cell phone number of job owner
+ */
+getContactInfo: PROCEDURE EXPOSE neatwind firstName lastName phone
+
+  firstName = ''
+  lastName = ''
+  cc = 1
+  areaCode = ''
+  exchange = ''
+  number = ''
+
+
+  'MAKEBUF'
+  QUEUE 'Please enter the following information:'
+  QUEUE ''
+  QUEUE '    First Name:@@@@@@@@@@@@'
+  QUEUE '     Last Name:@@@@@@@@@@@@'
+  QUEUE '  Country Code: +@@'
+  QUEUE '    Cell Phone:@@@ @@@ @@@@'
+  neatwind '( SAA90',
+       'DATAENTRY',
+       'NOBLANK',
+       'OUTVARS (firstName lastName cc areaCode exchange number)',
+       'TYPE.1,2=STRING',
+       'TYPE.3,4,5,6=NUM',
+       'LENGTH.1,2,4,5,6=MANDATORY'
+  $rc = rc
+  'DROPBUF'
+
+  /* Fill in the response buffer */
+  UPPER firstName lastName
+  firstName = STRIP(firstName)
+  lastName = STRIP(lastName)
+  phone = cc || areaCode || exchange || number
+
+  RETURN $rc
+
+/*--------------------------------------------------------------------*/
+
+/*
+ * Subroutine: makeBanner
+ *
+ * Purpose:
+ *    Generate a multi-page horizontal banner
+ *
+ * Usage:
+ *    Called as makeBanner()
+ *
+ * Returns:
+ *    RC =  0 - Information collected
+ *          1 - NEATWIND failure
+ *          2 - Unable to produce banner
+ *          3 - User hit PF3 to exit
+ *         12 - User hit PF12 to cancel
+ */
+makeBanner: PROCEDURE EXPOSE neatwind PROGRAM.
+
+  /* Subroutine variables */
+  bannerPgm = ''
+  BANNER_TEXT = ''
+  font_choice = 'C'
+  we_are_ready_to_print = 0
+
+  /* Get input */
+  DO UNTIL we_are_ready_to_print
+    'MAKEBUF'
+    QUEUE 'Font:@ C=Cursive, G=Gothic'
+    QUEUE ''
+    QUEUE 'Enter your banner text below (max. 15 characters):'
+    QUEUE ''
+    QUEUE '                @@@@@@@@@@@@@@@'
+    neatwind '( SAA90',
+               'DATAENTRY',
+               'NOBLANK',
+               'CONFIRM',
+               'STRIP',
+               'OUTVARS ( font_choice BANNER_TEXT )',
+               'TYPE.1=(CHAR CG)',
+               'LENGTH.=MANDATORY'
+    $rc = rc
+    'DROPBUF'
+    
+    /* If the user hit PF3 or PF12, return to our caller */
+    IF $rc == -10 THEN RETURN 12
+    ELSE IF $rc == 9999 THEN RETURN 3
+
+    /*
+     * Send the user a confirmation dialog in case they hit ENTER
+     * by accident
+     */
+    IF $rc == 0 THEN
+      DO
+        cd_rc = confirmationDialog()
+        IF cd_rc == 9999 THEN RETURN 0
+        ELSE IF cd_rc ==1 THEN
+          DO
+            we_are_ready_to_print = 1
+            LEAVE
+          END
+      END
+  END
+
+  /* Determine the name of the banner program to invoke */
+  UPPER font_choice
+  SELECT
+    WHEN font_choice == 'C' THEN bannerPgm = 'CURSIVE'
+    WHEN font_choice == 'G' THEN bannerPgm = 'GOTHIC'
+  END
+  
+  /*
+   * The next line creates the fileid for SYSIN 'dataset' that the
+   * banner program requires. Note the filemode: A3. The 3 indicates
+   * that this is a temporary CMS file which, after being read once,
+   * will automatically be erased.
+   */
+  sysin = bannerPgm 'CMSUT3 A3'
+
+  /*
+   * Write the supplied text string to the temporary SYSIN file.
+   * Return if there's an error creating the file
+   */
+  'EXECIO 1 DISKW' sysin '1 F 80 ( FINIS VAR BANNER_TEXT'
+  IF rc <> 0 THEN RETURN 2
+
+  /*
+   * Define the OS/360-style 'datasets' required by the banner program.
+   * SYSIN is the input file containing the text to be printed
+   * SYSPRINT defines the destination for the program output. Here
+   * it is a file on the A-disk, but it could also be the printer.
+   * The filemode number 5 is not really necessary, but in general
+   * mode number 5 indicates a file created or used by CMS's built-in
+   * MVS (OS/360) simulation.
+  */
+  'FILEDEF SYSIN DISK' sysin
+  'FILEDEF SYSPRINT DISK CCLBANNR LISTING A5 ( RECFM FA LRECL 133'
+
+  /*
+   * Launch whatever version of the selected banner program
+   * that is on the same filemode as CCLPRINT EXEC
+   */
+  'PIPE CMS RUN' bannerPgm 'MODULE' LEFT(PROGRAM.FM,1) '| HOLE'
+
+  /* Check to see if a banner was actually generated */
+  'PIPE CMS LISTFILE CCLBANNR LISTING A | HOLE'
+  IF rc == 28 THEN RETURN 2
+
+  /*
+   * Make sure that there is no endless whitespace at the end of
+   * banner (like GOTHIC is apt to generate).  We will do this by
+   * running through the banner and figuring out the line number of
+   * the last line with any nonblank text, and then recreating the
+   * banner up to that point.
+   */
+  'EXECIO * DISKR CCLBANNR LISTING A (STEM LINES. FINIS'
+  last_line_with_text = 0
+  DO i = 1 TO lines.0
+    IF STRIP(lines.i) <> '-' THEN last_line_with_text = i
+  END
+  'ERASE CCLBANNR LISTING A'
+  DO i = 1 TO last_line_with_text
+    QUEUE lines.i
+  END
+  'EXECIO ' last_line_with_text ' DISKW CCLBANNR LISTING A (FINIS'
+
+  RETURN 0
+
+/*--------------------------------------------------------------------*/
+
+/*
+ * Subroutine: makeSign
+ *
+ * Purpose:
+ *    Generate a single-page sign
+ *
+ * Usage:
+ *    Called as makeSign()
+ *
+ * Returns:
+ *    RC =  0 - Information collected
+ *          1 - NEATWIND failure
+ *          2 - Unable to produce sign
+ *          3 - User hit PF3 to exit
+ *         12 - User hit PF12 to cancel
+ */
+makeSign: PROCEDURE EXPOSE neatwind
+
+  /* Subroutine variables */
+  centerFlag = ''
+  charSize = '1'
+  charsPerLine = 0
+  font = ''
+  h_justify = 'L'
+  lines.0 = 0
+  linesPerPage = 0
+  list_of_line_vars = ''
+  max_lines_per_page = 5
+  til_h_spacing = 0
+  v_justify = 'T'
+  we_are_ready_to_print = 0
+
+  DO UNTIL we_are_ready_to_print
+
+    /* Window 1: Ask user for size */
+    'MAKEBUF'
+    QUEUE '&INFO.What size characters would you like to use?'
+    QUEUE ''
+    QUEUE '&INFOF.@1. 12 characters high:'
+    QUEUE '&INFOF.         - 12 characters/line'
+    QUEUE '&INFOF.         - 5 lines/page'
+    QUEUE ''
+    QUEUE '&INFOF.     2. 20 characters high:'
+    QUEUE '&INFOF.         - 8 characters/line'
+    QUEUE '&INFOF.         - 3 lines/page'
+    neatwind '(SAA90 MENU=12 DEFAULT=1'
+    $rc = rc
+    'DROPBUF'
+    
+    SELECT
+      /* Case 1: User selected choice 1 */
+      WHEN $rc == 1 THEN
+        DO
+          charsPerLine = 12
+          linesPerPage = 5
+          font = 'SIZE12'
+        END
+      
+      /* Case 2: User selected choice 2 */
+      WHEN $rc == 2 THEN
+        DO
+          charsPerLine = 8
+          linesPerPage = 3
+          font = 'SIZE20'
+        END
+
+      /* Case 3: User hit PF3 to exit to the main menu */
+      WHEN $rc == 9999 THEN
+        RETURN 0
+
+      /* Case 4: User pressed PF12 to cancel */
+      WHEN $rc == -10 THEN
+        RETURN 12
+
+      OTHERWISE
+        DO
+          fatalErrorPopup ("NEATWIND returned RC="||$rc)
+          RETURN 1
+        END
+    END
+
+    /* Build our text input dialog */
+    inputLine = ''
+    DO i = 1 TO (41 - charsPerLine) % 2
+      /* This loop builds horizontal spacing */
+      /* (41 is the length of the longest line in the panel */
+      inputLine = inputLine || ' '
+    END
+    DO i = 1 TO charsPerLine by 1
+      /* This loop builds the input line */
+      inputLine = inputLine || '@'
+    END
+    DO i = 1 to linesPerPage by 1
+      /* This loop builds the list of line variables */
+      lines.i = ''
+      list_of_line_vars = list_of_line_vars 'lines.'||i
+    END
+
+    /* Window 2: Text entry dialog */
+    DO UNTIL we_are_ready_to_print
+      'MAKEBUF'
+      QUEUE 'Justification:'
+      QUEUE '   Horizontal@ L=Left, C=Center'
+      QUEUE '     Vertical@ B=Bottom, C=Center, T=Top'
+      QUEUE ''
+      lines.0 = linesPerPage
+      DO i = 1 to linesPerPage by 1
+        QUEUE inputLine
+      END
+
+      /* Pad the window so that it is always the same size */
+      IF linesPerPage < max_lines_per_page THEN
+        DO
+          delta = max_lines_per_page - linesPerPage
+          DO i = 1 to delta
+            QUEUE ''
+          END
+        END
+
+      neatwind '( SAA90',
+                      'DATAENTRY',
+                      'NOBLANK',
+                      'CONFIRM',
+                      'STRIP',
+                      'OUTVARS ( h_justify v_justify' list_of_line_vars ')',
+                      'TYPE.1=(CHAR CL)',
+                      'TYPE.2=(CHAR BCT)',
+                      'LENGTH.1,2=MANDATORY'
+      $rc = rc
+      'DROPBUF'
+
+      /* If the user hit PF3, return to the main panel */
+      IF $rc == 9999 THEN RETURN 3
+
+      /* If the user hit PF12, return to window 1 */
+      IF $rc == -10 THEN LEAVE
+
+      /*
+       * Send the user a confirmation dialog in case they hit ENTER
+       * by accident
+       */
+      IF $rc == 0 THEN
+        cd_rc = confirmationDialog()
+        IF cd_rc == 9999 THEN RETURN 0
+        ELSE IF cd_rc ==1 THEN
+          DO
+            we_are_ready_to_print = 1
+            LEAVE
+          END
+      END
+  END
+
+  UPPER h_justify v_justify
+
+  /* Turn the BIGTEXT "CENTER" option on if the user wanted it */
+  IF h_justify == 'C' THEN centerFlag = 'CENTER'
+
+  /* Perform vertical justification */
+  IF v_justify <> 'T' THEN
+    DO
+      /* Figure out how many lines are blank */
+      numBlanks = 0
+      DO i = 1 to lines.0
+        IF lines.i == '' THEN numBlanks = numBlanks + 1
+      END
+
+      IF numBlanks > 0 THEN
+        DO
+          newLines.0 = linesPerPage
+          numTopBlanks = 0
+
+          /*
+           * Determine the number of blank lines to insert at the
+           * top of the message
+           */
+          IF v_justify == 'C' & numBlanks > 1 THEN
+            DO
+              numTopBlanks = numBlanks % 2
+            END
+          ELSE IF v_justify == 'B' THEN
+            DO
+              numTopBlanks = numBlanks
+            END
+
+          /* Perform the vertical justification */
+          j = 1
+          DO i = 1 to linesPerPage
+            IF i <= numTopBlanks THEN newLines.i = ''
+            ELSE
+              DO
+                newLines.i = lines.j
+                j = j + 1
+              END
+          END
+
+          /* Copy the justified buffer back into lines. */
+          DO i = 1 to linesPerPage
+            lines.i = newLines.i
+          END
+        END
+    END
+
+  /* Create the sign itself */
+  'EXEC BIGTEXT CCLSIGN LISTING A ( STEM=lines.',
+                                   'CC',
+                                   'FONT='||font,
+                                   centerFlag,
+                                   'WIDTH='||charsPerLine
+  IF rc <> 0 THEN RETURN 2
+
+  /*
+   * Problem: the LISTING file being created by BIGTEXT won't actually
+   * close until CCLPRINT exits unless we execute the following command:
+   */
+  'FINIS CCLSIGN LISTING A'
+
+  RETURN 0
+
+/*--------------------------------------------------------------------*/
+
+/*
+ * Subroutine: print
+ *
+ * Purpose:
+ *    Ask for confirmation before printing, print a useful header, then
+ *    send file to printer
+ *
+ * Usage:
+ *    Called as print(fn, ft, fm, what)
+ *
+ *    Where:
+ *      fn        - CMS filename of the file to print
+ *
+ *      ft        - CMS filetype of the file to print
+ *
+ *      fm        - CMS filename of the file to print
+ *
+ *      what      - What is being printed (optional; displayed in
+ *                  confirmation dialog)
+ *
+ * Returns:
+ *    RC =  0 - File has been printed and deleted
+ *          1 - File cannot be found
+ *          2 - Unable to generate banner page
+ *          3 - User hit PF3 to exit
+ */
+print: PROCEDURE EXPOSE neatwind SYSOP
+  fn   = arg(1)
+  ft   = arg(2)
+  fm   = arg(3)
+  what = arg(4)
+
+  IF what = '' THEN what = 'job'
+
+  'PIPE CMS LISTFILE' fn ft fm '| HOLE'
+  IF rc = 28 THEN RETURN 1
+
+  DO FOREVER
+    'MAKEBUF'
+    QUEUE 'Your' what 'is ready to print!'
+    QUEUE ''
+    QUEUE 'Be mindful that large jobs could take a long time to print.'
+    QUEUE 'If there are a large number of people wanting to print jobs,'
+    QUEUE 'you can send your job to the system operator and they can'
+    QUEUE 'print it for you when things calm down.'
+    QUEUE ''
+    QUEUE 'What would you like to do?'
+    QUEUE ''
+    QUEUE ' P - Print the job right now'
+    QUEUE ' S - Send the job to the operator to print later'
+    QUEUE ' X - Cancel the job'
+    neatwind '12 (SAA90 MENU=PSX'
+    $rc = rc
+    'DROPBUF'
+
+    /* Process responses */
+    IF $rc == 1 THEN
+      DO
+        'PRINT' fn ft fm
+        LEAVE
+      END
+    ELSE IF $rc == 2 THEN
+      DO
+        getContact_rc = getContactInfo()
+        IF getContact_rc == -10 THEN ITERATE
+        ELSE IF getContact_rc == 9999 THEN RETURN 3
+
+        banner.0 = 5
+        banner.1 = "IBM TechX 26"
+        banner.2 = ''
+        banner.3 = lastName
+        banner.4 = firstName
+        banner.5 = phone
+        'EXEC BIGTEXT ( STEM=banner.',
+                       'CC',
+                       'FONT=SIZE12',
+                       'WIDTH=12'
+        IF rc <> 0 THEN RETURN 2
+
+        /*
+         * Problem: the CMSUT1 file being created by BIGTEXT won't
+         * actually close until CCLPRINT exits unless we execute the
+         * following command:
+         */
+        'FINIS BIGTEXT CMSUT1 A'
+
+        /*
+         * HACK!  We're short on time and SNPCAL produces output that always
+         * does an extra page eject.  If the file we are printing is SNPCAL,
+         * blow away the first line.
+         */
+        IF fn == "SNPCAL" THEN
+          DO
+            'COPYFILE' fn ft fm fn ft fm '( FROM 2 REPL'
+          END
+        
+        /*
+         * Make a new output file where the first two pages are this banner
+         * page we just made, and the rest of the file is whatever it was
+         * that we're trying to print
+         */
+        'COPYFILE',
+          'BIGTEXT CMSUT1 A',
+          'BIGTEXT CMSUT1 A',
+          fn ft fm,
+          'CCLPRINT LISTING A',
+          '( APPEND'
+
+        'SENDFILE CCLPRINT LISTING A TO' SYSOP
+
+        'PIPE (ENDCHAR ?)',
+        '   CMS ERASE CCLPRINT LISTING A',
+        '|  HOLE',
+        '?  CMS ERASE BIGTEXT CMSUT1 A',
+        '|  HOLE'
+        LEAVE
+      END
+
+      /* We want to cancel and abandon the print job */
+      ELSE IF $rc == 3 | $rc == -10 THEN LEAVE
+
+      /* The user hit PF3, exit to the sign CCLPRINT menu */
+      ELSE IF $rc == 9999 THEN RETURN 3
+
+      /* Ruh roh... we shouldn't get here */
+      ELSE
+        DO
+          fatalErrorPopup("NEATWIND returned RC="||$rc)
+          LEAVE
+        END
+  END
+
+  /* Erase the file */
+  'PIPE CMS ERASE'  fn ft fm '| HOLE'
+
+RETURN 0
+
+/*--------------------------------------------------------------------*/
+/* End of file                                                        */
+/*--------------------------------------------------------------------*/

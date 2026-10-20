@@ -1,0 +1,128 @@
+/*
+ * CCLDEMO
+ *    Frontend for various demonstration programs on CMS
+ *
+ * Classification:
+ *      Public
+ *
+ * Author:
+ *      Okyere Boateng <okyerework@outlook.com>
+ *      Dan FitzGerald <danjfitzgerald@comcast.net>
+ *
+ * Revision History:
+ *    03/2026
+ *      - Initial creation, as VCFDEMO EXEC
+ *
+ *    10/2026
+ *      - Reimplemeted using IOS3270 and NEATWIND libraries
+ *      - Major application rewrite from the ground up
+ *
+ * Purpose:
+ *    Allows users to print signs and banners on a line printer
+ *
+ * Usage:
+ *
+ *    >>- CCLDEMO -------------------------------------------------><
+ *
+ * Requirements:
+ *
+ *    Filename Filetype Purpose
+ *    -------- -------- ---------------------------------------------
+ *    APPWIN   MODULE   Required by FOOLISH 
+ *    CCLMENU  IOS3270  Panel definitions for DIOF-3
+ *    DIGICLOK PACKAGE  Digital clock demo
+ *    EAGRTLIB MODULE   CMS REXX Compiler runtime libraries (optional)
+ *    FSX      PACKAGE  Required by DIGICLOK and MAZE
+ *    IOS3270  MODULE   Display Input/Output Facility v.3 (DIOF-3)
+ *                      (IBM 3270 panel generation library)
+ *    NEATWIND MODULE   3270 indowing library VM/CMS applications
+ *    RXAPSTEM MODULE   Required by FOOLISH
+ *    WAKEUP   MODULE   Required by DIGICLOK
+ *
+ *    Note that PACKAGE files list additional dependencies
+ *
+ * Exit Normal -
+ *      RC =  0 - Operation completed successfully
+ *
+ * Exit Error -
+ *      None.
+ */
+
+/* Load the compiled version of NEATWIND if we haven't done so already */
+neatwind = 'NEATWIND'
+'NUCXLOAD NEATWIND'
+IF rc <> 0 & rc <> 1 THEN   /* If not loaded and not already active */
+  DO
+    SAY 'Unable to NUCXLOAD NEATWIND, defaulting to interpreted version'
+    neatwind = 'EXEC' neatwind
+  END
+ 
+DO FOREVER
+  choice = ''                              /* User's choice            */
+  in_error = 0                             /* Are we looping in error? */
+ 
+  'IOS3270 CCLMENU  IOS3270 * ;MISCP           (PA2 SUBSET '
+  IF RC <> 0 THEN EXIT RC
+ 
+  /* Get application choice */
+  SELECT
+    WHEN choice = '1' THEN DO
+      'EXEC digiclok'
+      ITERATE
+    END
+
+    WHEN choice = '2' THEN DO
+      'EXEC FOOLISH'
+      ITERATE
+    END
+ 
+    WHEN choice = '3' THEN DO
+      'EXEC maze'
+      ITERATE
+    END
+ 
+    WHEN choice = '4' THEN DO
+      'PIPE CMS EXEC EIGHT | VAR answer'
+      QUEUE '&INFO.'||answer
+      QUEUE ''
+      QUEUE '$INFOF.Press ENTER to continue'
+      'MAKEBUF'
+      neatwind '( SAA90 MESSAGE'
+      'DROPBUF'
+      ITERATE
+    END
+
+    WHEN choice = '5' THEN DO
+      'EXEC TANK'
+      ITERATE
+    END
+
+    WHEN choice = '6' THEN DO
+      'EXEC NEATDEMO'
+      ITERATE
+    END
+ 
+    WHEN choice = 'X' | choice = 'x' THEN DO
+      EXIT 0
+    END
+ 
+    OTHERWISE DO
+      Call emsg 'Invalid choice. Please enter a valid number, or X.'
+      ITERATE
+    END
+ 
+  IF in_error <> 1 THEN
+    DO
+      SAY ''
+      SAY 'Press ENTER to return to the demoscene menu...'
+      PULL .
+    END
+END
+ 
+EXIT 0
+ 
+emsg:
+   msg=Arg(1)
+   alarm='ALARM'
+   in_error = 1
+   Return

@@ -1,0 +1,5 @@
+/* Alias for launching CCLMENU */
+ 
+ADDRESS CMS
+'CCLMENU'
+EXIT rc

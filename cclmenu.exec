@@ -1,0 +1,294 @@
+/*
+ * CCLMENU EXEC
+ *    Panel-based menu application for Classical Computing Laboratory
+ *    systems
+ *
+ * Author:
+ *      Okyere Boateng <okyerework@outlook.com>
+ *      Dan FitzGerald <danjfitzgerald@comcast.net>
+ *
+ * Revision History:
+ *    03/2026
+ *      - Initial creation, as VCFHOME EXEC
+ *
+ *    04/2026
+ *      - Re-implemented panels using IOS3270 library
+ *
+ *    10/2026
+ *      - Reimplemeted some messages using NEATWIND
+ *      - Rewrote "sign shop" application to use IOS3270 and NEATWIND
+ *      - Modified ELIZA invocation to store and print transcripts
+ *
+ * Purpose:
+ *    Main menu for CCL VM systems so that users can more readily use
+ *    them without prior CMS knowledge
+ *
+ *
+ * Usage:
+ *
+ *    >>- CCLMENU -- ( --.------------.----------------------------><
+ *                       ;--- GAMES --;
+ *                       '--- INTRO --'
+ *
+ *    GAMES - Open to the "Games" menu
+ *    INTRO - Display welcome text
+ *
+ * Requirements:
+ *
+ *    - IBM BASIC/VM
+ *    - IBM CMS REXX Compiler (optional)
+ *    - IBM Display Input/Output Facility version 3
+ *
+ *    Filename Filetype Purpose
+ *    -------- -------- --------------------------------------------- 
+ *    BASICRUN MODULE   BASIC/VM runtime library
+ *    CCLDEMO  EXEC
+ *    CCLGAMES EXEC
+ *    CCLMENU  IOS3270  Panel definitions for DIOF-3
+ *    CCLPRINT EXEC
+ *    EAGRTLIB MODULE   CMS REXX Compiler runtime libraries (optional)
+ *    IOS3270  MODULE   Display Input/Output Facility v.3 (DIOF-3)
+ *                      (IBM 3270 panel generation library)
+ *    NEATWIND EXEC     Windowing library for VM/CMS applications
+ *    NEATWIND MODULE   Faster, compiled version of NEATWIND EXEC
+ *
+ *    Note that PACKAGE and all CCL* EXEC files list additional dependencies
+ *
+ * Exit Normal -
+ *      RC =  0 - Operation completed successfully
+ *
+ * Exit Error -
+ *      None.
+ */
+
+alarm    = ''                              /* No alarm default         */
+msg      = ''                              /* Initiate error message   */
+cursor   = '00001'                         /* Set cursor position.     */
+neatwind = 'NEATWIND'                      /* Cmd to invoke NEATWIND   */
+
+/*
+ * TODO: Check for application prerequisites:
+ *
+ *    - BASIC/VM
+ *    - IOS3270
+ *    - NEATWIND MODULE
+ *    - CCLPRINT
+ *    - CCLGAMES
+ *    - CCLDEMO
+ */
+
+
+/*
+ * Parse program options
+ */
+opts.games = 0          /* Skip right to the games menu? */
+opts.intro = 0          /* Display intro splash screen? */
+opts.invalid.0 = 0
+
+PARSE UPPER ARG . '(' progopts
+DO FOREVER
+  PARSE UPPER VAR progopts opt progopts
+  SELECT
+    WHEN opt == "INTRO" THEN opts.intro = 1
+    WHEN opt == "GAMES" THEN opts.games = 1
+    WHEN opt == '' THEN LEAVE
+    OTHERWISE
+      DO
+        SAY "Unknown program option: '"||opt||"'... ignoring"
+      END
+  END
+END
+
+/* Load the compiled version of NEATWIND if we haven't done so already */
+'NUCXLOAD NEATWIND'
+IF rc <> 0 & rc <> 1 THEN   /* If not loaded and not already active */
+  DO
+    SAY 'Unable to NUCXLOAD NEATWIND, defaulting to interpreted version'
+    neatwind = 'EXEC' neatwind
+  END
+
+/* Initial load of NEATWIND to perform PSLOAD */
+'MAKEBUF'
+QUEUE '&WAIT1.Application loading;'
+QUEUE '&WAIT2.Please wait'
+neatwind '(SAA90 MESSAGE NOWAIT PSLOAD'
+'DROPBUF'
+
+/* Handle INTRO option */
+IF opts.intro == 1 THEN CALL intro
+
+/* Handle GAMES option */
+IF opts.games == 1 THEN
+  DO
+    'EXEC CCLGAMES'
+    $rc = rc
+
+    /* CCLGAMES will exit with a nonzero return code ONLY if it */
+    /* can't load the IOS3270 panel. And if it can't, we can't. */
+    IF $rc <> 0 THEN 
+      DO
+        'PIPE CMS NUCXDROP NEATWIND | HOLE'
+        EXIT $rc
+      END
+  END
+
+DO FOREVER
+  choice   = ''                            /* User's choice            */
+
+  'IOS3270 CCLMENU  IOS3270 * ;HOMEP           (PA2 SUBSET '
+  $rc = rc
+  IF $rc <> 0 THEN 
+    DO
+      'PIPE CMS NUCXDROP NEATWIND | HOLE'
+      EXIT $rc
+    END
+
+  /* Process choice */
+  SELECT
+    WHEN choice = '1' THEN DO
+      'EXEC CCLPRINT'
+    END
+
+    WHEN choice = '2' THEN DO
+      'EXEC CCLGAMES'
+    END
+
+    WHEN choice = '3' THEN DO
+      'EXEC CCLDEMO'
+    END
+
+    WHEN choice = '4' THEN DO
+
+      /* Make sure we can actually run Eliza */
+      'CP SET 370ACCOM ON'
+
+      /* Display first pop-up message */
+      'MAKEBUF'
+      QUEUE '&WAIT1.Loading large language model'
+      QUEUE '&WAIT2.Please wait...'
+      neatwind '2 ( SAA90 MESSAGE NOWAIT'
+      'DROPBUF'
+
+      /* Make sure that we have an ELIZA TEXT to run */
+      'PIPE CMS LISTFILE ELIZA TEXT A | HOLE'
+      IF rc == 28 THEN
+        DO
+          'PIPE CMS BASIC ELIZA | HOLE'
+        END
+      ELSE
+        DO
+          'SLEEP 2 SEC'
+        END
+
+      /* Display second pop-up message */
+      'MAKEBUF'
+      QUEUE 'This is our advanced AI agent, the culmination of'
+      QUEUE 'years of research.  Unfortunately, she can be quite'
+      QUEUE "sensitive, so never tell her to 'shut up'."
+      QUEUE ''
+      QUEUE 'Press ENTER when ready.'
+      neatwind '5 (SAA90 MESSAGE'
+      'DROPBUF'
+
+      /* Launch ELIZA */
+      'BASICRUN ELIZA'
+
+      /* Clear the screen */
+      'VMFCLEAR'
+
+      /* Ask if they want to print their transcript */
+      'PIPE CMS LISTFILE ELIZA $LOG$ A | HOLE'
+      IF rc <> 28 THEN
+        DO
+          'MAKEBUF'
+          QUEUE '&ASK.Would you like to print a transcript of your session?'
+          neatwind '1 (SAA90 QUERY'
+          $rc = rc
+          'DROPBUF'
+          IF $rc == 1 THEN
+            DO
+              'PRINT ELIZA $LOG$ A'
+            END
+        END
+
+      'PIPE CMS ERASE ELIZA * A | HOLE'
+    END
+
+    WHEN CHOICE = 'C' | CHOICE = 'c' THEN DO
+      CALL exit_to_cms
+    END
+
+    /* Secret!  "Dial M for Meridian" */
+    WHEN CHOICE = 'M' | CHOICE = 'm' THEN DO
+      CALL dial_m_for_meridian
+    END
+
+    WHEN CHOICE = 'X' | CHOICE = 'x' THEN DO
+      'TERM MORE 0 0'
+      'LOGOFF HOLD'
+    END
+
+    OTHERWISE DO
+      Call emsg 'Invalid choice. Please enter a valid number, C, or X.'
+    END
+  END
+END
+
+'PIPE CMS NUCXDROP NEATWIND | HOLE'
+EXIT 0
+
+emsg:
+   msg=Arg(1)
+   in_error = 1
+   alarm='ALARM'
+   Return
+
+intro:
+  'MAKEBUF'
+  QUEUE "Welcome to the Classical Computing Laboratory at IBM Poughkeepsie!"
+  QUEUE ""
+  QUEUE "You are interacting with an S/390 mainframe running the VM/ESA"
+  QUEUE "hypervisor, and each user account is really its' own virtual"
+  QUEUE "machine.  This particular virtual machine is running an instance"
+  QUEUE "of the CMS operating system."
+  QUEUE ""
+  QUEUE "To make it easier to use the system, we have developed a menu-"
+  QUEUE "driven application to let you easily navigate through a curated"
+  QUEUE "selection of choice CMS applications and games.  If you already"
+  QUEUE "know how to use CMS and would prefer to work from the CMS command"
+  QUEUE "line, press PF3 now.  Otherwise, you can use option 'C' from the"
+  QUEUE "main menu to return to CMS at any time."
+  QUEUE ""
+  QUEUE "Press PF3 to exit or ENTER to continue."
+  QUEUE ""
+  neatwind '( SAA90 MESSAGE'
+  IF rc <> 0 THEN CALL exit_to_cms
+  'DROPBUF'
+
+  RETURN
+
+dial_m_for_meridian:
+  'MAKEBUF'
+  QUEUE "You entered 'M' which doesn't appear to be an option."
+  QUEUE "Curious..."
+  QUEUE ''
+  QUEUE 'Press ENTER to continue'
+  neatwind '( SAA90 MESSAGE'
+  'DROPBUF'
+  RETURN
+
+exit_to_cms:
+  'VMFCLEAR'
+  SAY ' .---------------------------------------------------------------------------.'
+  SAY ' |           WELCOME TO THE CONVERSATIONAL MONITORING SYSTEM (CMS)           |'       
+  SAY ' |---------------------------------------------------------------------------|'
+  SAY ' |                                                                           |'
+  SAY " |     1. To log off of VM, type 'logoff' and then hit the ENTER key         |"
+  SAY ' |                                                                           |'
+  SAY " |     2. To re-launch the menu system, type 'CCLMENU' and hit ENTER         |"
+  SAY ' |                                                                           |'
+  SAY " |     3. For an introduction to CMS, type 'help task task' and hit ENTER    |"
+  SAY ' |                                                                           |'
+  SAY " '---------------------------------------------------------------------------'"
+  SAY ''
+  EXIT 0
