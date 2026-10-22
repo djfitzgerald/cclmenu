@@ -1,0 +1,263 @@
+.**********************************************************************
+.* CCLVM1:      Historic VM/CMS system @ the Classical Computing Lab **
+.*                                                                   **
+.*(c) Copyright International Business Machines Corporation 2026,    **
+.*               All rights reserved.                                **
+.*                                                                   **
+.* Classific:   Unclassified                                         **
+.* Author:      Danielle FitzGerald                                  **
+.* Support:     Danielle FitzGerald                                  **
+.* Application: CCLVM1                                               **
+.* Change:                                                           **
+.**********************************************************************
+.foilset fonts=mixed fpitch=6 spitch=10 sec='                 '
+.*.setup fonts=medium shadow='y y y n n n' shade='1 1 40 40 40'
+.setup fonts=medium
+.product CCLVM1
+.titlep 2
+.title CCLVM1
+.title
+.title A museum-quality VM/CMS environment
+.author D.J. FitzGerald
+:address
+:aline.VNET: DFITZGER at GDLVM7
+:aline.Email: danfitz@us.ibm.com
+:aline.
+:aline.Classical Computing Laboratory at IBM Poughkeepsie
+:aline.Poughkeepsie, NY
+:eaddress
+.foilhead HEAD NULL   PRODUCT
+.foilfoot DATE STATUS NUMBER
+.foilfoot DATE STATUS NUMBER
+.contents SMALL
+.*---------------------------------------------------------------------
+.foil Introduction
+.b CCLVM1 is a museum-quality VM/CMS Environment hosted in the
+Classical Computing Laboratory at IBM Poughkeepsie
+.d An employee-run historical IT center on the IBM campus in
+Poughkeepsie, NY
+.d Open to all IBM employees and official site visitors by appointment
+.d Currently undergoing renovations, expected reopening in 2028
+.b Accurately recreates the kind of timesharing environments used at
+IBM and other companies from the 1970s through the 1990s
+.*----------------------------
+.foil Hardware Overview
+.b IBM 3006-B01 System/390 Integrated server
+.b IBM 3174-21L Establishment Controller (channel-attached)
+.b IBM 3278-2 Display Station
+.b IBM 3278-5 Display Station
+.b IBM 3279-S2B Color Display Station
+.b IBM 3279-S3G Color Display Station
+.b IBM 3299 8-Port Coax Multiplexor
+.b IBM 4224-1 Dot Matrix Line Printer
+.*----------------------------
+.foil IBM 3006-B01 System/390 Integrated Server
+.b Introduced on November 12, 1998
+.b Enterprise-grade Pentium II server with mainframe co-processor
+.b Based off of "Personal System/370" and "Personal System/390" lines
+of mainframe-compatible PC workstations
+.b Has an OS/2 host operating system on the Pentium II, running S/390
+operating systems in parallel on the mainframe co-processor
+.d OS/2 host conceptually serves the same function as the S/390 Support
+Element, just with a completely different software stack
+.b Allowed for mainframe functionality on real hardware, without the
+need for expensive additional S/390 devices such as 3480/90 tape drives
+or 3390 disk storage
+.b Succeeded by the IBM 7060 Multiprise 3000, a real mainframe in same
+form-factor case
+.*----------------------------
+.foil IBM 3174-21L Establishment Controller
+.b Introduced in 1986
+.b Needed to connect terminals and printers to mainframes
+.b Processes I/O operations for the terminals and printers
+.b Ours is a rack-mount model that connects with System/360-style "bus
+and tag" channel cables
+.d Large floor models and small desktop models were also available
+.b The 3174 could be expended with a range of options and adapters:
+channel, ESCON, serial (V.24/V.35), coax, fiber optic "coax", ISDN,
+token-ring, ethernet
+.*----------------------------
+.foil IBM 3278 Display Station
+.b Monochrome mainframe terminal introduced in 1977
+.b Introduced the following features:
+.d Extended Highlighting: ability to set highlighting attributes on
+individual characters as well as on fields (blinking, character set,
+reverse video, and underscored)
+.d Accented characters and dead keys
+.d Programmed Symbols: programmable characters, able to display
+monochrome graphics (with 3620 Character Set Extension and 5790
+Programmed Symbols)
+.b CCLVM1 features two models:
+.d Model 2: 80 x 24 character resolution
+.d Model 5: 132 x 27 character resolution, switchable to 80 x 24
+.*----------------------------
+.foil IBM 3279 Display Station
+.b First IBM color terminal, introduced in 1979
+.b Uses same "Extended Data Stream" as the 3278
+.d Think of it as a 3278 with color
+.b Two color sets available:
+.d Base color: Greed, Red, Blue, White
+.d Extended color: Base colors plus Pink, Yellow, and Turquoise
+.b CCLVM1 features two models:
+.d Model S2B: 80 x 24 character resolution with extended color
+.d Model S3G: 80 x 32 character resolution with extended color and
+programmed symbol set graphics
+.*----------------------------
+.foil IBM 4224-1 Dot Matrix Line Printer
+.b Low-end enterprise line printer from 1986
+.b Speed of around 200 characters-per-second in draft mode
+.d Compare with high-end 6262-D22 of same era: 2,200 lines per minute!
+.b Several variants were available:
+.d System/36, System/38, and AS/400 (twainax interface)
+.d System/370 and System/390 (coax interface)
+.d Series/1 (parallel ASCII interface)
+.d System/88 (serial ASCII interface)
+.*----------------------------
+.foil VM/CMS Operating Environment
+.b VM is a :hp3.hypervisor:ehp3., an operating system that serves
+virtual machines
+.d The current version, z/VM, is used to host large Linux server farms
+.b Introduced internally in 1967 as :hp2.CP-67:ehp2., first sold to the
+public as :hp2.VM/370:ehp2. in 1972.
+.b Was conceived as a solution to the :hp3.time-sharing problem:ehp3.,
+that is, the problem of allowing more than one person to use a computer
+simultaneously
+.d Each user would get their own virtual machine, which could run any
+System/360 or System/370 operating system
+.d General purpose users used :hp2.CMS:ehp2., a single-tasking
+operating system with a non-hierarchical filesystem
+.d Other popular uses were for operating system development, and for
+partitioning a System/370 for running multiple instances of VSE
+.*----------------------------
+.foilcont
+.b By the 1980s, IBM had extensive internal infrastructure built
+around VM and CMS
+.d In a world before PCs, IBMers used CMS virtual machines for tasks
+like email, calendaring, document preparation, application development,
+and end-user applications
+.d A global CMS-based bulletin board system served as the corporate
+communications and file sharing backbone for IBM
+.*----------------------------
+.foilcont
+.b As a result, VM and CMS was the host platform for many IBM
+innovations:
+.d :hp2.Generalized Markup Language (GML):ehp2., a set of markup tags
+that are the direct ancestor to XML
+.d :hp2.IBM System R:ehp2., the first implementation of SQL
+.d :hp2.LEXX:ehp2., the first text editor to use live parsing and
+colored syntax highlighting
+.d :hp2.PROFS:ehp2., the first commercially-successful office
+automation software
+.d :hp2.Rexx:ehp2., a high-level programming language considered a
+precursor to Tcl and Python
+.d The first RISC compiler and linker were written on YMS, a research
+operating system running as a VM/370 guest
+.*----------------------------
+.foil The CCLVM1 VM Configuration
+.b CCLVM1 is running :hp2.VM/ESA 2.4.0:ehp2., a version of VM from 1999
+.b This can be considered the last version of "old world" VM
+.d In December of 1999, IBM would formally add S/390 support to the
+Linux kernel.  Linux would eventually become the dominant guest
+operating system on VM and use of VM/CMS as an end-user timesharing
+environment would greatly diminish.
+.d In 2000 the product would be renamed z/VM with the introduction of
+64-bit IBM z/Architecture support
+.b Rationale for running VM/ESA 2.4.0 on the IBM 3006:
+.d Current during the period in which the S/390 Integrated Server was a
+supported product
+.d Improved reliability over VM/ESA 2.3.0
+.d S/390 processor in the 3006 uses 31-bit addressing, so no need for
+the z/Architecture support provided by z/VM 3.1
+.*----------------------------
+.foil Software on CCLVM1
+.b Great pains have been taken to outfit CCLVM1 with a wide array of
+software appropriate for a 1999-era VM/CMS timesharing system:
+.table 4 24 56
+.entry Compilers          ¬Available for BASIC, COBOL, Fortran,
+.entry                    ¬PL/I, and Rexx
+.rule
+.entry DCF                ¬Document Composition Facility, used
+.entry                    ¬for markdown-based document publishing
+.rule
+.entry Demos and Games    ¬Curated by current and former IBMers, in
+.entry                    ¬addition to examples found in internet
+.entry                    ¬archives such as "the CBT tape"
+.rule
+.entry OfficeVision/VM    ¬Integrated office suite with mail,
+.entry                    ¬calendaring, and other features.
+.entry                    ¬Successor to PROFS.
+.rule
+.entry TOOLS              ¬Filesharing and bulletin board system
+.entry
+.tablend
+.*----------------------------
+.foil CCLMENU and the Guest Environment
+.b We developed a new CMS application called :hp2.CCLMENU:ehp2. to
+help visitors to the Classical Computing Laboratory get the most out of
+CCLVM1
+.b Design philosophy
+.d Users with no prior VM or CMS experience should be able to
+accomplish meaningful tasks with minimal assistance
+.d UX should be visually appealing and show off the qualities of IBM
+3270-series terminals
+.d The application should take advantage of user libraries developed by
+earlier generations of IBMers ("standing on the shoulders of giants")
+.*----------------------------
+.foilcont
+.b To that end, we used two libraries:
+.n :hp2.Display Input/Output Facility v.3 (DIOF-3):ehp2., also known as
+"IOS3270", is a library that allows CMS Rexx programmers to write
+full-screen panel applications without manipulating the 3270 datastream
+themselves
+.n :hp2.NEATWIND:ehp2. creates and manages overlapping pop-up windows
+and dialog boxes, with the ability to use graphical icons on terminals
+that support it (such as our 3279-S3G)
+.bb In this manner, we guide the user through a curated selection of
+CMS applications without them needing to know how to use CMS itself
+.d Application panels ask simple numeric response or yes-no questions
+.*----------------------------
+.foil CCLMENU Features
+.n Create a Banner, Sign, or Calendar
+.d Pop-up windows guide users through the process of designing a
+multi-page vertical banner or a single-page sign.  An IBM VS FORTRAN
+version of the famous Snoopy calendar generator can also be used to
+create calendars for arbitrary month/year ranges
+.n Play a Game
+.d A selection of over fifteen games is presented, taken from sources
+such as :hp3.Creative Computing:ehp3. magazine, David H. Ahl
+programming books, the CBT tape archive, and the personal collections
+of IBM retirees
+.n View Cool Demos
+.d Similar to the above, but with interesting demos
+.n Talk with our Advanced AI Chatbot
+.d A port of the :hp3.Creative Computing:ehp3. version of ELIZA, with
+the option to print transcripts
+.*----------------------------
+.foil Special Thanks
+This hard work would have been impossible without the generous time,
+donations, and guidance of a dedicated community of VM/CMS systems
+programmers and developers:
+.b Evie Cooper, Auburn University
+.b Bruce Hayden, IBM Worldwide Systems Center (retired)
+.b Michel Hack, IBM Research (retired)
+.b Ray Mansell, IBM Research (retired)
+.b Paul Novak, IBM Worldwide Systems Center
+.b Rudi Rudolph, New York State Office of IT Services
+.*----------------------------
+.foilcont
+Similarly, I owe a tremendous debt of gratitude to my team at IBM.
+The Classical Computing Laboratory at IBM Poughkeepsie is a volunteer
+project, and I would not have been able to attend TechXchange or even
+prepare this exhibit without the unwavering support of the IBM
+HashiCorp Automation team:
+.b Brandy Jackson, Senior Engineering Manager, Automation Pillar
+.b Jacob Repp, Principal Engineer, Automation Pillar
+.*----------------------------
+.foilcont
+Last but not least, my eternal thanks to my co-founder at the Classical
+Computing Laboratory, Connor Krukosky.  Without Connor's dedication,
+time, expertise, and professional packing skills, we would not have had
+most of the hardware in this exhibit, nor would we have been able to
+pack our crates to ship it all out to Atlanta.
+.*----------------------------
+.end
