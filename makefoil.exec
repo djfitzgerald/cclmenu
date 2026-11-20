@@ -1,0 +1,49 @@
+/* */
+ADDRESS CMS
+TRACE OFF
+PARSE UPPER ARG fn ft fm .
+
+IF ft == '' THEN ft = 'FOILS'
+IF fm == '' THEN fm = 'A'
+
+/* Make sure that the input file is there */
+'PIPE CMS LISTFILE' fn ft fm ' | HOLE'
+IF rc == 28 THEN
+  DO
+    SAY 'Input file not found'
+    EXIT 1
+  END
+
+/* Drop any loaded nucleus extensions or OUT won't work */
+'NUCXDROPB *'
+
+/* Delete any old working files we may have */
+'PIPE (ENDCHAR ?)',
+'     CMS ERASE' fn 'LIST3820 A',
+'|    HOLE',
+'?    CMS ERASE' fn 'LISTPS A',
+'|    HOLE'
+
+/* Make the LIST3820 file */
+'EXEC OUT' fn ft fm '( ODUP FDUP AS 3820 IAS UNC NOSAV ON DISK OR L PD PSM US A'
+'PIPE CMS LISTFILE' fn 'LIST3820 A | HOLE'
+IF rc == 28 THEN
+  DO
+    SAY 'Unable to create LIST3820 file'
+    EXIT 2
+  END
+
+/* Make the PostScript file */
+'LP3820' fn 'LIST3820 A'
+'PIPE CMS LISTFILE' fn 'LISTPS A | HOLE'
+IF rc == 28 THEN
+  DO
+    SAY 'Unable to create LISTPS file'
+    EXIT 4
+  END
+'PIPE CMS ERASE' fn 'LIST3820 A | HOLE'
+
+/* Send the file to my email */
+'SF' fn 'LISTPS A TO DANFITZ AT IBMUS'
+
+EXIT rc

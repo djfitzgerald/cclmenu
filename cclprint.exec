@@ -7,8 +7,8 @@
  *      Public
  *
  * Author:
- *      Okyere Boateng <okyerework@outlook.com>
- *      Dan FitzGerald <danjfitzgerald@comcast.net>
+ *      Okyere Boateng <okyere@ibm.com>
+ *      Dan FitzGerald <danfitz@us.ibm.com>
  *
  * Revision History:
  *    03/2026
@@ -28,7 +28,7 @@
  * Requirements:
  *
  *    Filename Filetype Purpose
- *    -------- -------- --------------------------------------------- 
+ *    -------- -------- ---------------------------------------------
  *    CALLER   PACKAGE  Required by BIGTEXT
  *    CCLMENU  IOS3270  Panel definitions for DIOF-3
  *    CURSIVE  MODULE   Cursive font banner printer
@@ -59,7 +59,7 @@ PROGRAM.FT = ''             /* Filetype of this source file */
 PROGRAM.FM = ''             /* CMS filemode where this file is stored */
 PROGRAM.NAME_CALLED = ''    /* Name by which the program was called */
 PROGRAM.ADDRESS = ''        /* Initial (default) address for commands */
-SYSOP = 'MAINT'             /* VM ID to send deferred print jobs */
+SYSOP = 'DFITZGER'          /* VM ID to send deferred print jobs */
 
 /* Global variables */
 contact.firstName = ""
@@ -127,7 +127,7 @@ DO FOREVER
       CALL emsg 'Invalid choice. Please enter a valid number, or X.'
       ITERATE
     END
-  
+
   /* Display an error message if need be */
   IF in_error <> 1 THEN
     DO
@@ -369,7 +369,7 @@ makeBanner: PROCEDURE EXPOSE neatwind PROGRAM.
                'LENGTH.=MANDATORY'
     $rc = rc
     'DROPBUF'
-    
+
     /* If the user hit PF3 or PF12, return to our caller */
     IF $rc == -10 THEN RETURN 12
     ELSE IF $rc == 9999 THEN RETURN 3
@@ -396,7 +396,7 @@ makeBanner: PROCEDURE EXPOSE neatwind PROGRAM.
     WHEN font_choice == 'C' THEN bannerPgm = 'CURSIVE'
     WHEN font_choice == 'G' THEN bannerPgm = 'GOTHIC'
   END
-  
+
   /*
    * The next line creates the fileid for SYSIN 'dataset' that the
    * banner program requires. Note the filemode: A3. The 3 indicates
@@ -423,6 +423,12 @@ makeBanner: PROCEDURE EXPOSE neatwind PROGRAM.
   */
   'FILEDEF SYSIN DISK' sysin
   'FILEDEF SYSPRINT DISK CCLBANNR LISTING A5 ( RECFM FA LRECL 133'
+
+  'MAKEBUF'
+  QUEUE '&WAIT1.Preparing your banner;'
+  QUEUE '&WAIT2.Please wait'
+  neatwind '(SAA90 MESSAGE NOWAIT PSLOAD'
+  'DROPBUF'
 
   /*
    * Launch whatever version of the selected banner program
@@ -504,7 +510,7 @@ makeSign: PROCEDURE EXPOSE neatwind
     neatwind '(SAA90 MENU=12 DEFAULT=1'
     $rc = rc
     'DROPBUF'
-    
+
     SELECT
       /* Case 1: User selected choice 1 */
       WHEN $rc == 1 THEN
@@ -513,7 +519,7 @@ makeSign: PROCEDURE EXPOSE neatwind
           linesPerPage = 5
           font = 'SIZE12'
         END
-      
+
       /* Case 2: User selected choice 2 */
       WHEN $rc == 2 THEN
         DO
@@ -658,6 +664,12 @@ makeSign: PROCEDURE EXPOSE neatwind
         END
     END
 
+  'MAKEBUF'
+  QUEUE '&WAIT1.Preparing your sign;'
+  QUEUE '&WAIT2.Please wait'
+  neatwind '(SAA90 MESSAGE NOWAIT PSLOAD'
+  'DROPBUF'
+
   /* Create the sign itself */
   'EXEC BIGTEXT CCLSIGN LISTING A ( STEM=lines.',
                                    'CC',
@@ -771,7 +783,7 @@ print: PROCEDURE EXPOSE neatwind SYSOP
           DO
             'COPYFILE' fn ft fm fn ft fm '( FROM 2 REPL'
           END
-        
+
         /*
          * Make a new output file where the first two pages are this banner
          * page we just made, and the rest of the file is whatever it was

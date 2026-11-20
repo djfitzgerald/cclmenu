@@ -96,7 +96,7 @@ Programmed Symbols)
 .b Uses same "Extended Data Stream" as the 3278
 .d Think of it as a 3278 with color
 .b Two color sets available:
-.d Base color: Greed, Red, Blue, White
+.d Base color: Green, Red, Blue, White
 .d Extended color: Base colors plus Pink, Yellow, and Turquoise
 .b CCLVM1 features two models:
 .d Model S2B: 80 x 24 character resolution with extended color
@@ -173,21 +173,21 @@ the z/Architecture support provided by z/VM 3.1
 .b Great pains have been taken to outfit CCLVM1 with a wide array of
 software appropriate for a 1999-era VM/CMS timesharing system:
 .table 4 24 56
-.entry Compilers          Â¬Available for BASIC, COBOL, Fortran,
-.entry                    Â¬PL/I, and Rexx
+.entry Compilers          ¬Available for BASIC, COBOL, Fortran,
+.entry                    ¬PL/I, and Rexx
 .rule
-.entry DCF                Â¬Document Composition Facility, used
-.entry                    Â¬for markdown-based document publishing
+.entry DCF                ¬Document Composition Facility, used
+.entry                    ¬for markdown-based document publishing
 .rule
-.entry Demos and Games    Â¬Curated by current and former IBMers, in
-.entry                    Â¬addition to examples found in internet
-.entry                    Â¬archives such as "the CBT tape"
+.entry Demos and Games    ¬Curated by current and former IBMers, in
+.entry                    ¬addition to examples found in internet
+.entry                    ¬archives such as "the CBT tape"
 .rule
-.entry OfficeVision/VM    Â¬Integrated office suite with mail,
-.entry                    Â¬calendaring, and other features.
-.entry                    Â¬Successor to PROFS.
+.entry OfficeVision/VM    ¬Integrated office suite with mail,
+.entry                    ¬calendaring, and other features.
+.entry                    ¬Successor to PROFS.
 .rule
-.entry TOOLS              Â¬Filesharing and bulletin board system
+.entry TOOLS              ¬Filesharing and bulletin board system
 .entry
 .tablend
 .*----------------------------
